@@ -13,27 +13,27 @@ The Docker image archive is meant to be shipped as part of the final `artifact.t
 To run the experiments, reviewers will need:
 
 - Docker (tested with Docker version 29.3.0)
-- ~10 GB free disk space for the image + results (depends on compression)
+- ~10 GB of free disk space for the image and results (depends on compression)
 
-The full setup has been tested on Linux, but should work on any platform that supports Docker (e.g., Windows, macOS).  
+The full setup has been tested on Linux but should work on any platform that supports Docker (e.g., Windows, macOS).
 By default, only 6 fast benchmarks are run for each suite, so each experiment should complete within a few seconds to a few minutes, depending on the configuration and machine performance.
-The evaluator is free to change this number and run all 1753 benchmarks, but note that this may take several hours (even days) to complete.
+The evaluator is free to change this number and run all 1753 benchmarks, but note that this may take several hours or even days to complete.
 
 ## Configurations
 
-By default, all experiments (i.e., each benchmark instance) will be run with the following configurations:
+By default, all experiments (i.e., each benchmark instance) are run with the following configurations:
 
-- **cvc5 baseline**: cvc5 with the default configuration, without any cuts or LP solver.
-- **cvc5+glpk**: cvc5 with the glpk cut generator, with 100, 200, and 300 iterations.
-- **cvc5+soplex**: cvc5 with the soplex cut generator, with 100, 200, and 300 iterations, and modes: default, strict, and delta.
-- **cvc5+qsoptex**: cvc5 with the qsoptex cut generator, with 100, 200, and 300 iterations, and modes: default, strict, and delta.
+- **cvc5 baseline**: cvc5 with the default configuration, without any external LP solver.
+- **cvc5+GLPK**: cvc5 with GLPK as the external LP solver, with pivot thresholds of 100, 200, and 300.
+- **cvc5+SoPlex**: cvc5 with SoPlex as the external LP solver, with pivot thresholds of 100, 200, and 300, and modes: default (epsilon), strict, and delta.
+- **cvc5+qsoptex**: cvc5 with qsoptex as the external LP solver, with pivot thresholds of 100, 200, and 300, and modes: default (epsilon), strict, and delta.
 
 ## Experiments
 
-In this README, all experiment are launched by running a bash script (with the extension `.sh`).
-The artifact also contains equivalent powershell scripts (replace the file extension with `.ps1`) and cmd scripts (replace the extension with `.bat`), if you wish to use those shells (e.g., you are using Windows).
+In this README, all experiments are launched by running a bash script (with the extension `.sh`).
+The artifact also contains equivalent PowerShell scripts (replace the file extension with `.ps1`) and cmd scripts (replace the extension with `.bat`), if you wish to use those shells (e.g., if you are using Windows).
 
-If you are using Linux and run into a permission errror when running the scripts, try invoking them with `bash <scriptname>.sh` instead.
+If you are using Linux and run into a permission error when running the scripts, try invoking them with `bash <scriptname>.sh` instead.
 
 ### Smoke test
 
@@ -97,9 +97,9 @@ To access the GUI in your browser, look for a line like:
 ```
 
 Click (or copy-paste) the URL to open the JupyterLab interface in your browser, where you can explore the results of the smoke test.
-Select the `results.ipynb` notebook, and click on `Run > Run All Cells` to execute the notebook and visualize the results.
+Select the `results-run.ipynb` notebook, and click on `Run > Run All Cells` to execute the notebook and visualize the results.
 
-### Running the tool
+### Running the tool on different benchmark suites
 
 By default, `run.sh` runs the smoke test suite, named `smoke`.
 You can run a different benchmark suite by passing the suite name `<suite>` and an optional per-configuration limit:
@@ -131,16 +131,19 @@ For example, running
 will run the first 3 instances listed in `instances/lanteresse.csv` with all configurations, and write the results to `results-lanteresse`.
 
 You are free to modify any of the CSV files in `instances/` to run different sets of benchmarks.
-We recommend editing `instances/custom.csv` to keep the original files intact.
+We recommend editing `instances/custom.csv` to keep the other files intact.
 
 Following the CSV tradition, the first line is treated as a header and must be `file`; each subsequent row should indicate the file name with the `.smt2` extension.
 Keep in mind that only [QF_LRA](https://smt-lib.org/logics-all.shtml#QF_LRA) theory benchmarks from the [SMT-LIB release 2025 of non-incremental benchmarks](https://zenodo.org/records/16740866) are available.
+For example, change the contents of `instances/custom.csv` to
 
 ```csv
 file
 my_benchmark_1_from_smtlib.smt2
 my_benchmark_2_from_smtlib.smt2
 ```
+
+and then run
 
 ```bash
 ./run.sh custom 2
@@ -149,11 +152,13 @@ my_benchmark_2_from_smtlib.smt2
 ### Exploring the results from the paper
 
 All results from the **Benchmark** section of the paper are included in the artifact as CSV files (see `results/`).
-The Jupyter notebook `results-paper.ipynb` can be used to explore these results and regenerate the tables and plots.
+To explore these results, run the `explore.sh` script:
 
 ```bash
 ./explore.sh
 ```
+
+This will open the JupyterLab interface in your browser. Open the `results-explore.ipynb` notebook to view the analysis.
 
 ### Running the binary
 

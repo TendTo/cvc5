@@ -30,4 +30,4 @@ docker run --rm \
   "${IMAGE_TAG}" "${RUN_NAME}" "${LOCAL_LIMIT}"
 
 echo "[artifact] Launching the Jupyter notebook to visualize the results"
-docker run -p 8888:8888 --rm -v "${RESULTS_DIR}:/work/results:rw" -v "${INSTANCES_DIR}:/work/instances" "${IMAGE_TAG}"
+docker run -p 8888:8888 --rm -e "LOCAL_LIMIT=${LOCAL_LIMIT}" -e "RUN_NAME=${RUN_NAME}" -v "${RESULTS_DIR}:/work/results:rw" -v "${INSTANCES_DIR}:/work/instances" "${IMAGE_TAG}"
