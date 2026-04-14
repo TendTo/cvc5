@@ -101,7 +101,7 @@ Select the `results.ipynb` notebook, and click on `Run > Run All Cells` to execu
 
 ### Running the tool
 
-By default, `run.sh` runs the smoke test suite, named `smoke`. 
+By default, `run.sh` runs the smoke test suite, named `smoke`.
 You can run a different benchmark suite by passing the suite name `<suite>` and an optional per-configuration limit:
 
 - The suite name corresponds to a CSV file in `instances/` (without the `.csv` extension). The list includes
@@ -149,7 +149,7 @@ my_benchmark_2_from_smtlib.smt2
 ### Exploring the results from the paper
 
 All results from the **Benchmark** section of the paper are included in the artifact as CSV files (see `results/`).
-A Jupyter notebook is provided to explore these results and regenerate the tables and plots.
+The Jupyter notebook `results-paper.ipynb` can be used to explore these results and regenerate the tables and plots.
 
 ```bash
 ./explore.sh
