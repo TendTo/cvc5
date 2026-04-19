@@ -95,7 +95,7 @@ All problems are divided into buckets depending on the time taken by the solver 
     categories = ["Very Fast (<0.1s)", "Fast (0.1-1s)", "Medium (1-10s)", "Hard (10-100s)", "Very Hard (>100s)"]
     latex_categories = ["$[0s, 0.1s)$", "$[0.1s, 1s)$", "$[1s, 10s)$", "$[10s, 100s)$", r"$[100s, 6h)$"]
     for solver in solvers_analysis:
-        if solver.dataframe.empty:
+        if solver.dataframe.empty or solver.dataframe[solver.dataframe[f"result{solver.solver_id}"].isin(["sat", "unsat"])].empty:
             continue
         solver_name = solver.solver_name
         df = solver.dataframe
@@ -819,6 +819,7 @@ def plot_performance_profiles(
     title="",
     shrink_width: float = 1.1,
     shrink_height: float = 0.8,
+    margin_top: float = 0.0,
     ax=None,
 ):
     """Plot Dolan–Moré performance profiles for an arbitrary number of solver results.
@@ -961,6 +962,10 @@ def plot_performance_profiles(
         new_figsize = (current_figsize[0] / shrink_width, current_figsize[1] / (shrink_height + 0.1))
         _, ax = plt.subplots(figsize=new_figsize)
 
+    # Remove solvers where max ratio is 0% (i.e., no solved instances) to avoid cluttering the plot.
+    results = [result for result in results if profile_df[result.solver_name].max() > 0]
+    profile_df = profile_df[[result.solver_name for result in results]]
+
     # Black-and-white-friendly styling: cycle line styles and markers so that
     # curves stay distinguishable even when colors are not.
     line_styles = ["-", "--", ":", "-."]
@@ -990,7 +995,7 @@ def plot_performance_profiles(
     if title:
         ax.set_title(title)
     ax.set_xlim(1.0, max_tau)
-    ax.set_ylim(0.0, 100.0)
+    ax.set_ylim(0.0, 100.0 + margin_top)
     ax.grid(True, linestyle="--", alpha=0.4)
 
     ax_zoom = ax.inset_axes([1.1, 0.0, 0.2, 1.0])
