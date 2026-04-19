@@ -72,6 +72,7 @@ public:
 
  Result::Status findModel(bool exactResult) override
  {
+   if (!exactResult && d_varOrderPivotLimit <= 0) return Result::UNKNOWN;
    return dualFindModel(exactResult);
   }
 

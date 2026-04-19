@@ -3382,6 +3382,14 @@ void TheoryArithPrivate::importSolution(const external::Solution& solution, CVC5
     d_partialModel.printEntireModel(Trace("arith::importSolution"));
   }
 
+  // TODO: does it need to be full effort?
+  if (options().arith.delta >= 0 && solution.linResult == LinResult::LinFeasible)
+  {
+    // If we are working with a delta result, after applying the assignment,
+    // trust the LP solver and return SAT
+    d_qflraStatus = Result::SAT;
+    return;
+  }
 
   d_qflraStatus = d_attemptSolSimplex.attempt(solution);
 
@@ -3390,15 +3398,6 @@ void TheoryArithPrivate::importSolution(const external::Solution& solution, CVC5
     Trace("arith::importSolution")
         << "importSolution intermediate " << d_qflraStatus << endl;
     d_partialModel.printEntireModel(Trace("arith::importSolution"));
-  }
-
-  // TODO: does it need to be full effort?
-  if (options().arith.delta >= 0 && solution.linResult == LinResult::LinFeasible)
-  {
-    // If we are working with a delta result, after applying the assignment,
-    // trust the LP solver and return SAT
-    d_qflraStatus = Result::SAT;
-    return;
   }
 
   if (d_qflraStatus != Result::UNSAT)
