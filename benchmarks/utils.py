@@ -9,9 +9,11 @@ from functools import reduce
 import random
 from pathlib import Path
 
+
 def is_docker():
-    cgroup = Path('/proc/self/cgroup')
-    return Path('/work/.dockerenv').is_file() or (cgroup.is_file() and 'docker' in cgroup.read_text())
+    cgroup = Path("/proc/self/cgroup")
+    return Path("/work/.dockerenv").is_file() or (cgroup.is_file() and "docker" in cgroup.read_text())
+
 
 SAVE = not is_docker()
 
@@ -63,14 +65,33 @@ class SolverResult:
             dataframe=new_df, solver_name=self.solver_name, solver_id=self.solver_id, iterations=self.iterations
         )
 
+    @property
+    def initial_delta(self):
+        if "options::delta" in self.dataframe.columns:
+            assert all(self.dataframe["options::delta"] == self.dataframe["options::delta"].iloc[0])
+            return self.dataframe["options::delta"].iloc[0]
+        else:
+            return None
 
-def difficulty_analysis(solvers_analysis: list[SolverResult], total_count: int, group_name="all"):
+    @property
+    def mode(self):
+        if "options::strict" in self.dataframe.columns and self.dataframe["options::strict"].iloc[0]:
+            assert all(self.dataframe["options::strict"] == self.dataframe["options::strict"].iloc[0])
+            return r"$t$"
+        elif "options::delta" in self.dataframe.columns and self.dataframe["options::delta"].iloc[0] >= 0:
+            assert all(self.dataframe["options::delta"] == self.dataframe["options::delta"].iloc[0])
+            return fr"$\delta={self.dataframe['options::delta'].iloc[0]}$"
+        else:
+            return r"$\varepsilon$"
+
+
+def difficulty_analysis(solvers_analysis: list[SolverResult], total_count: int, group_name="all", fig_caption=""):
     # Instance difficulty categorization
     text = f"""## Difficulty analysis on {group_name}
 
 All problems are divided into buckets depending on the time taken by the solver to solve them.
 
-| Solver | Strict | Pivots | Very Fast (<0.1s) | Fast (0.1-1s) | Medium (1-10s) | Hard (10-100s) | Very Hard (>100s) | Total |
+| Solver | Modes  | Pivots | Very Fast (<0.1s) | Fast (0.1-1s) | Medium (1-10s) | Hard (10-100s) | Very Hard (>100s) | Total |
 | ------ | ------ | ------ | ----------------- | ------------- | -------------- | -------------- | ----------------- | ----- |
 """
 
@@ -95,7 +116,10 @@ All problems are divided into buckets depending on the time taken by the solver 
     categories = ["Very Fast (<0.1s)", "Fast (0.1-1s)", "Medium (1-10s)", "Hard (10-100s)", "Very Hard (>100s)"]
     latex_categories = ["$[0s, 0.1s)$", "$[0.1s, 1s)$", "$[1s, 10s)$", "$[10s, 100s)$", r"$[100s, 6h)$"]
     for solver in solvers_analysis:
-        if solver.dataframe.empty or solver.dataframe[solver.dataframe[f"result{solver.solver_id}"].isin(["sat", "unsat"])].empty:
+        if (
+            solver.dataframe.empty
+            or solver.dataframe[solver.dataframe[f"result{solver.solver_id}"].isin(["sat", "unsat"])].empty
+        ):
             continue
         solver_name = solver.solver_name
         df = solver.dataframe
@@ -113,7 +137,7 @@ All problems are divided into buckets depending on the time taken by the solver 
         ), f"Expected only one pivot limit per solver in the analysis, but got {df_copy['options::pivots'].unique()} on solver {solver_name}"
         pivot_limit = int(df_copy["options::pivots"].iloc[0]) if "options::pivots" in df_copy.columns else 0
 
-        row = f"| {solver_name} | {'✔' if "options::strict" in df_copy.columns and  df_copy['options::strict'].iloc[0] else ''} | {pivot_limit}"
+        row = f"| {solver_name} | {solver.mode} | {pivot_limit}"
 
         data[solver_name] = {
             r"\# Sol. / \# Tot.": f"{len(df_copy)} / {total_count} ({100 * len(df_copy) / total_count:.1f}\\%)"
@@ -160,6 +184,8 @@ All problems are divided into buckets depending on the time taken by the solver 
 
     # Put a legend to the right of the current axis
     ax.legend(title="Category", loc="center left", bbox_to_anchor=(1, 0.5))
+    if fig_caption:
+        plt.figtext(0.5, -0.05, fig_caption, wrap=True, horizontalalignment="center", fontsize=10)
     plt.show()
 
     if SAVE:
@@ -172,7 +198,7 @@ All problems are divided into buckets depending on the time taken by the solver 
 """
 
 
-def external_solver_impact(solvers_analysis: list[SolverResult], filename: str = ""):
+def external_solver_impact(solvers_analysis: list[SolverResult], filename: str = "", fig_caption: str = ""):
     # Instance difficulty categorization
     text = """## External solver impact
 
@@ -389,6 +415,8 @@ Analysis on the impact of the external simplex solver on the overall performance
         )
 
     fig.suptitle("Exact solver impact (dotted line = calls)")
+    if fig_caption:
+        plt.figtext(0.5, -0.05, fig_caption, wrap=True, horizontalalignment="center", fontsize=10)
     plt.tight_layout()
     plt.show()
 
@@ -405,7 +433,9 @@ def print_stats(soplex_configs: list[SolverResult], filename: str = ""):
 
         df = df.copy()
         df["global::totalTime"] = df["global::totalTime"].apply(convert_to_numeric) / 1000
-        df["theory::arith::z::approx::lp::timer"] = df["theory::arith::z::approx::lp::timer"].apply(convert_to_numeric) / 1000
+        df["theory::arith::z::approx::lp::timer"] = (
+            df["theory::arith::z::approx::lp::timer"].apply(convert_to_numeric) / 1000
+        )
         df["theory::arith::z::approx::lp::setup::timer"] = (
             df["theory::arith::z::approx::lp::setup::timer"].apply(convert_to_numeric)
             if "theory::arith::z::approx::lp::setup::timer" in df.columns
@@ -504,7 +534,9 @@ def print_stats(soplex_configs: list[SolverResult], filename: str = ""):
             columns=list(renames.values()),
         )
         with open(
-            f"/home/campus.ncl.ac.uk/c3054737/Programming/phd/dlinear-paper/tables/{filename}.tex", "r+", encoding="utf-8"
+            f"/home/campus.ncl.ac.uk/c3054737/Programming/phd/dlinear-paper/tables/{filename}.tex",
+            "r+",
+            encoding="utf-8",
         ) as f:
             text = f.read()
             f.seek(0)
@@ -820,6 +852,7 @@ def plot_performance_profiles(
     shrink_width: float = 1.1,
     shrink_height: float = 0.8,
     margin_top: float = 0.0,
+    fig_caption: str = "",
     ax=None,
 ):
     """Plot Dolan–Moré performance profiles for an arbitrary number of solver results.
@@ -1050,6 +1083,9 @@ def plot_performance_profiles(
 
     box = ax.get_position()
     ax.set_position([box.x0, box.y0, box.width * shrink_width, box.height * shrink_height])
+
+    if fig_caption:
+        ax.figure.text(0.5, -0.01, fig_caption, ha="center", va="bottom", fontsize=9)
 
     # Put a legend to the right of the current axis
     # ax.legend(loc="center left", bbox_to_anchor=(1, 0.5))
