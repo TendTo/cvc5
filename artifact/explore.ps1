@@ -31,4 +31,5 @@ Write-Host "[artifact] Launching the Jupyter notebook to visualize the results"
 & docker run -p 8888:8888 --rm `
   --mount "type=bind,source=$ResultsDirAbs,target=/work/results" `
   --mount "type=bind,source=$InstancesDirAbs,target=/work/instances" `
-  $ImageTag
+  -it --entrypoint "./jupyter_impl.sh" `
+  $ImageTag "results-explore.ipynb"

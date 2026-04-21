@@ -31,6 +31,7 @@ REM Use --mount instead of -v to avoid Windows drive-letter ':' parsing issues.
 docker run -p 8888:8888 --rm ^
   --mount "type=bind,source=%RESULTS_DIR%,target=/work/results" ^
   --mount "type=bind,source=%INSTANCES_DIR%,target=/work/instances" ^
-  "%IMAGE_TAG%"
+  -it --entrypoint "./jupyter_impl.sh" ^
+  "%IMAGE_TAG%" "results-explore.ipynb"
 
 endlocal

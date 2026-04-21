@@ -26,13 +26,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 WORKDIR /src
 
-# Fetch and unpack SMT-LIB QF_LRA benchmark archive
-RUN mkdir -p /opt/benchmarks \
-    && curl -L "https://zenodo.org/records/16740866/files/QF_LRA.tar.zst?download=1" \
-    -o /tmp/QF_LRA.tar.zst \
-    && tar --zstd -xf /tmp/QF_LRA.tar.zst -C /opt/benchmarks \
-    && rm -f /tmp/QF_LRA.tar.zst
-
 RUN git clone https://github.com/TendTo/qsopt-ex.git --depth 1 \
     && cd /src/qsopt-ex \
     && ./bootstrap \
@@ -78,16 +71,32 @@ FROM quay.io/jupyter/scipy-notebook AS runtime
 
 ENV DEBIAN_FRONTEND=noninteractive
 
+
+# Use root to create the /benchmarks directory and set permissions, as the default user in the base image does not have permissions to create directories in the root filesystem.
+USER root
+RUN mkdir -p /benchmarks && \
+    chmod -R a+rwX /benchmarks
+USER $NB_USER
+
+
+# Fetch and unpack SMT-LIB QF_LRA benchmark archive, moving them all to the /benchmarks directory.
+RUN curl -L "https://zenodo.org/records/16740866/files/QF_LRA.tar.zst?download=1" \
+    -o /tmp/QF_LRA.tar.zst \
+    && tar --zstd -xf /tmp/QF_LRA.tar.zst -C /benchmarks \
+    && rm -f /tmp/QF_LRA.tar.zst && \
+    find /benchmarks -type f -name "*.smt2" -exec mv {} /benchmarks/ \; && \
+    find /benchmarks -type d -empty -delete
+
+
+ADD https://objectstorage.eu-zurich-1.oraclecloud.com/p/xlfE6Ysf_O7Eey_sTiBu_tTUTt7dJhTFjq0rSJJkf4Rz4YgvFxa0i1PzFNj-Vwyn/n/zrr1s09jjqfi/b/dlinear/o/sk.tar.xz /benchmarks
+
 WORKDIR /work
 
 RUN touch .dockerenv
 
-# Move all .smt2 files to /benchmarks
-COPY --chown=jovyan --chmod=777 --from=builder /opt/benchmarks /benchmarks
-RUN find /benchmarks -type f -name "*.smt2" -exec mv {} /benchmarks/ \;
 
-COPY --from=builder --chown=jovyan --chmod=777 /src/cvc5/build/bin/cvc5 /usr/local/bin/cvc5
+COPY --from=builder --chown=$NB_USER --chmod=777 /src/cvc5/build/bin/cvc5 /usr/local/bin/cvc5
 
-COPY benchmarks .
+COPY --chown=$NB_USER benchmarks .
 
-COPY artifact/scripts .
+COPY --chown=$NB_USER artifact/scripts .
