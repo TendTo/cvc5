@@ -1,12 +1,15 @@
 @echo off
 setlocal EnableExtensions EnableDelayedExpansion
 
-REM Args: run name (default: smoke), local limit (default: 6)
+REM Args: run name (default: smoke), local limit (default: 6), time limit (default: 21000)
 set "RUN_NAME=%~1"
 if "%RUN_NAME%"=="" set "RUN_NAME=smoke"
 
 set "LOCAL_LIMIT=%~2"
 if "%LOCAL_LIMIT%"=="" set "LOCAL_LIMIT=6"
+
+set "TIME_LIMIT=%~3"
+if "%TIME_LIMIT%"=="" set "TIME_LIMIT=21000"
 
 set "SCRIPT_DIR=%~dp0"
 if "%SCRIPT_DIR:~-1%"=="\" set "SCRIPT_DIR=%SCRIPT_DIR:~0,-1%"
@@ -34,12 +37,14 @@ docker run --rm ^
   --mount "type=bind,source=%RESULTS_DIR%,target=/results" ^
   --mount "type=bind,source=%INSTANCES_DIR%,target=/instances" ^
   --entrypoint ./run_impl.sh ^
-  "%IMAGE_TAG%" "%RUN_NAME%" "%LOCAL_LIMIT%"
+  "%IMAGE_TAG%" "%RUN_NAME%" "%LOCAL_LIMIT%" "%TIME_LIMIT%"
 
 echo [artifact] Launching the Jupyter notebook to visualize the results
 docker run -p 8888:8888 --rm ^
   --mount "type=bind,source=%RESULTS_DIR%,target=/work/results" ^
   --mount "type=bind,source=%INSTANCES_DIR%,target=/work/instances" ^
-  "%IMAGE_TAG%"
+  -e "LOCAL_LIMIT=%LOCAL_LIMIT%" -e "RUN_NAME=%RUN_NAME%" -e "TIME_LIMIT=%TIME_LIMIT%" ^
+  -it --entrypoint ./jupyter_impl.sh ^
+  "%IMAGE_TAG%" "results-run.ipynb"
 
 endlocal

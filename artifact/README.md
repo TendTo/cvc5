@@ -5,7 +5,7 @@ This folder contains the **required artifact materials** for an AE review:
 ```bash
 artifact/
 ├── README.md # This file
-├── LICENSE   # License file for the artifact
+├── LICENCE   # License file for the artifact
 ├── qest-formats-ae-image.tar.gz # Self-contained Docker image archive
 ├── clean.sh     # Script to remove all generated results
 ├── run.sh       # Script to run the smoke test and benchmark suites
@@ -21,43 +21,51 @@ To run the experiments, reviewers will need:
 
 - Docker (tested with Docker version 29.3.0)
 - ~10 GB of free disk space for the image and results (depends on compression)
+- Linux is recommended for best compatibility, but Windows and macOS should also work with Docker.
 
-The full setup has been tested on Linux but should work on any platform that supports Docker (e.g., Windows, macOS).
+The full setup **has been tested on Linux** but should work on any platform that supports Docker (e.g., Windows, macOS).
 All scripts are provided in bash (`.sh`), PowerShell (`.ps1`), and cmd (`.bat`) formats for compatibility with different operating systems.
-
-## Configurations
-
-By default, each benchmark instance is evaluated over all the following configurations, for a total of 22 runs:
-
-| Solver              | Pivot thresholds | Mode                             |
-| ------------------- | ---------------- | -------------------------------- |
-| **cvc5** (baseline) | N/A              | N/A                              |
-| **cvc5+GLPK**       | 100, 200, 300    | N/A                              |
-| **dlinear+SoPlex**  | 100, 200, 300    | epsilon (default), strict, delta |
-| **dlinear+qsoptex** | 100, 200, 300    | epsilon (default), strict, delta |
-
-See _Sections 4.2_ and _Section 5_ of the paper for more details on modes _epsilon_, _strict_, and _delta_.
 
 ## At a glance
 
-Run the command corresponding to your desired mode of evaluation.
+Run the command corresponding to the desired mode of evaluation.
 Each command is described in more detail in the [Experiments](#experiments) section.
 
-| Mode                    | Command                    | What it does                                                                                                                                  | Expected result                                                                                                                                                  | Time estimate                                                                                                    |
-| ----------------------- | -------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
-| [**Smoke**](#smoke)     | `./run.sh`                 | Runs a single benchmark instance with every configuration.                                                                                    | Writes CSV files to `results-smoke/`, then launches JupyterLab with `results-run.ipynb`. Running the notebook will generate the plots from the collected data.   | Few seconds.                                                                                                     |
-| [**Run**](#run)         | `./run.sh [suite] [limit]` | Runs `[limit]` benchmark instances from `instances/[suite].csv` with every configuration.<br>By default, `[suite] = smoke` and `[limit] = 6`. | Writes CSV files to `results-[suite]/`, then launches JupyterLab with `results-run.ipynb`. Running the notebook will generate the plots from the collected data. | Few seconds/minutes. May take significantly longer if `[limit]` is increased or an harder `[suite]` is selected. |
-| [**Explore**](#explore) | `./explore.sh`             | Opens the shipped result CSVs from the paper.                                                                                                 | Launches JupyterLab with `results-explore.ipynb`, which contains the paper figures generated from the stored data.                                               | Few seconds.                                                                                                     |
-| [**Binary**](#binary)   | `./binary.sh [...]`        | Calls the `cvc5/dlinear` binary directly.                                                                                                     | Prints the solver output and statistics for the benchmark and options you choose.                                                                                | Depends on solver configuration and problem.                                                                     |
+| Mode                    | Command                              | What it does                                                                                                                                                                                                           | Expected result                                                                                      | Time estimate                                                                                                        |
+| ----------------------- | ------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| [**Smoke**](#smoke)     | `./run.sh`                           | Runs a single benchmark instance with every configuration.                                                                                                                                                             | Writes CSV files to `results-smoke/`, then launches the `results-run.ipynb` notebook.                | Less than a minute.                                                                                                  |
+| [**Run**](#run)         | `./run.sh [suite] [limit] [timeout]` | Runs `[limit]` benchmark instances from `instances/[suite].csv`, each taking at most `[timeout]` seconds using all supported configurations.<br>By default, `[suite] = smoke`, `[limit] = 6`, and `[timeout] = 21000`. | Writes CSV files to `results-[suite]/`, then launches the `results-run.ipynb` notebook.              | A few seconds to minutes. May take significantly longer if `[limit]` is increased or a harder `[suite]` is selected. |
+| [**Explore**](#explore) | `./explore.sh`                       | Opens the precomputed results presented in the paper.                                                                                                                                                                  | Launches the `results-explore.ipynb` notebook, which contains the figures and tables from the paper. | Less than a minute.                                                                                                  |
+| [**Binary**](#binary)   | `./binary.sh [...]`                  | Calls the `cvc5/dlinear` binary directly.                                                                                                                                                                              | Runs the solver with the given options.                                                              | Depends on solver configuration and problem.                                                                         |
 
 By default, **only 6 fast benchmarks are run for each suite**, so each experiment should complete within a **few seconds or minutes**, depending on the configuration and machine performance.
 The evaluator is free to change this number and **run all 1753 benchmarks**, but note that this may take **several hours or even days** to complete.
+
+## Configurations
+
+By default, each benchmark instance is evaluated using the configurations below, for a total of 31 possible combinations.
+Depending on the selected benchmark suite, some configurations may be skipped to save time and show only the most relevant results, matching those presented in the paper.
+The cvc5 baseline is always included.
+If you want complete control over the configuration of the solver, see the [Binary](#binary) section below.
+
+| Solver              | External LP solver | Pivot thresholds | Modes                   | Included in benchmarks from |
+| ------------------- | ------------------ | ---------------- | ----------------------- | --------------------------- |
+| **cvc5** (baseline) | N/A                | N/A              | N/A                     | SMT-LIB, Sloane–Stufken     |
+| **cvc5+GLPK**       | GLPK               | 100, 200, 300    | N/A                     | SMT-LIB                     |
+| **dlinear**         | SoPlex             | 100, 200, 300    | $\varepsilon$, $t$      | SMT-LIB                     |
+| **dlinear**         | qsoptex            | 100, 200, 300    | $\varepsilon$, $t$      | SMT-LIB                     |
+| **cvc5+GLPK**       | GLPK               | 0                | N/A                     | Sloane–Stufken              |
+| **dlinear**         | SoPlex             | 0                | $\varepsilon$           | Sloane–Stufken              |
+| **dlinear**         | qsoptex            | 0                | $\varepsilon$, $\delta$ | Sloane–Stufken              |
+|                     |
+
+See _Sections 4.2_ and _Section 5_ of the paper for more details on modes $\varepsilon$, $t$, and $\delta$.
 
 ## Experiments
 
 All scripts in this artifact are bash scripts (`.sh`).
 Equivalent PowerShell (`.ps1`) and cmd (`.bat`) scripts are also provided for Windows users.  
-If you are on Linux and see a permission error, run the script as `bash <scriptname>.sh`.
+If you are on Linux and see a permission error, run it as `bash <scriptname>.sh`.
 
 ### Smoke
 
@@ -102,66 +110,66 @@ Storing 1 lines, failed to parse 0 lines
 [artifact] Smoke test complete.
 ```
 
-After the run completes, the script launches JupyterLab (inside the container) to visualize the results.
+After the run completes, the script launches a notebook server inside the container to visualize the results.
 
 To access the GUI in your browser, look for a line like:
 
 ```bash
-[I 2026-03-26 18:00:41.239 ServerApp] Jupyter Server 2.17.0 is running at:
-[I 2026-03-26 18:00:41.239 ServerApp] http://localhost:8888/lab?token=51d44fc4f44ec4fba11187448c5bb6fffc410a4b476329ee
-[I 2026-03-26 18:00:41.239 ServerApp]     http://127.0.0.1:8888/lab?token=51d44fc4f44ec4fba11187448c5bb6fffc410a4b476329ee
-[I 2026-03-26 18:00:41.239 ServerApp] Use Control-C to stop this server and shut down all kernels (twice to skip confirmation).
-[C 2026-03-26 18:00:41.241 ServerApp]
-
-    To access the server, open this file in a browser:
-        file:///home/jovyan/.local/share/jupyter/runtime/jpserver-7-open.html
-    Or copy and paste one of these URLs:
-        http://localhost:8888/lab?token=51d44fc4f44ec4fba11187448c5bb6fffc410a4b476329ee # <-- Any of these urls
-        http://127.0.0.1:8888/lab?token=51d44fc4f44ec4fba11187448c5bb6fffc410a4b476329ee
+[artifact] Running the Jupyter notebook to produce the plots and tables
+[NbConvertApp] Converting notebook results-run.ipynb to notebook
+[NbConvertApp] Writing 182629 bytes to results-run.ipynb
+[artifact] Launching the Jupyter notebook to visualize the results
+[artifact] Jupyter notebook is running at http://localhost:8888/notebooks/results-run.ipynb # <-- Go to this URL in your browser
+[artifact] Alternative URLs: http://127.0.0.1:8888/notebooks/results-run.ipynb or http://0.0.0.0:8888/notebooks/results-run.ipynb
+[artifact] Press Ctrl+C two times in quick succession to stop the Jupyter notebook when finished.
 ```
 
-Click (or copy-paste) the URL to open the JupyterLab interface in your browser, where you can explore the results of the smoke test.
-Select the `results-run.ipynb` notebook, and click on `Run > Run All Cells` to execute the notebook and visualize the results.
+Click (or copy-paste) the URL to open the notebook interface in your browser, where you can explore the results of the smoke test.
 
 ### Run
 
-By default, `run.sh` runs the smoke test suite, named `smoke`.
-You can run a different benchmark suite by passing the suite name `[suite]` as the first argument to the script among the following options:
+By default, `run.sh` runs the smoke test suite named `smoke`.
+You can run a different benchmark suite by passing the suite name `[suite]` as the first script argument.
+Supported options are:
 
-| Suite name         | Tot. num. of instances | Description                                                                                        |
-| ------------------ | ---------------------- | -------------------------------------------------------------------------------------------------- |
-| **smoke**          | 1                      | A single instance for a quick test.                                                                |
-| **100_instances**  | 319                    | Instances that trigger at least one external LP call when the pivot threshold $n = 100$.           |
-| **200_instances**  | 177                    | Instances that trigger at least one external LP call when the pivot threshold $n = 200$.           |
-| **300_instances**  | 125                    | Instances that trigger at least one external LP call when the pivot threshold $n = 300$.           |
-| **latendresse**    | 18                     | Benchmarks from biological modeling.                                                               |
-| **miplib**         | 42                     | Adapted from the MIPLIB linear programming benchmarks.                                             |
-| **dtp-scheduling** | 91                     | Disjunctive Temporal Problems.                                                                     |
-| **all_instances**  | 1753                   | The full set of 1753 QF_LRA instances from the SMT-LIB release 2025 of non-incremental benchmarks. |
+| Suite name         | Total number of instances | Description                                                                                        |
+| ------------------ | ------------------------- | -------------------------------------------------------------------------------------------------- |
+| **smoke**          | 1                         | A single instance for a quick test.                                                                |
+| **100_instances**  | 319                       | Instances that trigger at least one external LP call when the pivot threshold $n = 100$.           |
+| **200_instances**  | 177                       | Instances that trigger at least one external LP call when the pivot threshold $n = 200$.           |
+| **300_instances**  | 125                       | Instances that trigger at least one external LP call when the pivot threshold $n = 300$.           |
+| **latendresse**    | 18                        | Benchmarks from biological modeling.                                                               |
+| **miplib**         | 42                        | Adapted from the MIPLIB linear programming benchmarks.                                             |
+| **dtp-scheduling** | 91                        | Disjunctive Temporal Problems.                                                                     |
+| **all_instances**  | 1753                      | The full set of 1753 QF_LRA instances from the SMT-LIB release 2025 of non-incremental benchmarks. |
+| **sk_instances**   | 71                        | Sloane–Stufken benchmarks.                                                                         |
 
-The run script will load the specified CSV file (i.e., `instances/[suite].csv`) and run all benchmarks listed in it, through all [configurations](#configurations).
+The run script loads the specified CSV file (i.e., `instances/[suite].csv`) and runs all listed benchmarks across all supported [configurations](#configurations).
 
 By default, the script executes **only the first 6 instances** per configuration, but you can change this limit by passing a second argument `[limit]` to the script.
 While it is possible to **run all 1753 benchmarks**, the process may take **several hours or even days** to complete.
 
-Results are written to `results-[suite]/` in this folder, and JupyterLab is launched afterward.
-Open the `results-run.ipynb` notebook and run all cells to visualize the results.
+Results are written to `results-[suite]/` in this folder, and the notebook server is launched afterward.
+Open the link provided in the terminal to access the notebook interface in your browser, where you can explore the results of the run.
 
 ```bash
-./run.sh [benchmark suite name, default: smoke] [limit of instances to run per configuration, default: 6]
+./run.sh [benchmark suite name, default: smoke] [number of instances to run, default: 6] [timeout per instance in seconds, default: 21000]
 ```
 
 #### Example
 
 ```bash
-./run.sh latendresse 3
+./run.sh latendresse 3 60
 ```
 
-will run the first three instances from `instances/latendresse.csv` and writes the resulting data to `results-latendresse/`.
+will run the first three instances from `instances/latendresse.csv`, each with a 60-second timeout, and write the resulting data to `results-latendresse/`.
 
 #### Custom suite
 
-You can edit `instances/custom.csv` to define your own list of benchmarks. The file must start with the header `file`, and every following row must name a `.smt2` benchmark. Only [QF_LRA](https://smt-lib.org/logics-all.shtml#QF_LRA) benchmarks from the [SMT-LIB release 2025 of non-incremental benchmarks](https://zenodo.org/records/16740866) are available, but you can also add a custom [volume to the docker container](https://docs.docker.com/storage/volumes/) to run your own benchmarks that are not included in the artifact.
+It is possible to edit `instances/custom.csv` to define your own list of benchmarks.
+The file must start with the header `file`, and every following row must name a `.smt2` benchmark.
+Only [QF_LRA](https://smt-lib.org/logics-all.shtml#QF_LRA) benchmarks from the [SMT-LIB release 2025 of non-incremental benchmarks](https://zenodo.org/records/16740866) and Sloane–Stufken benchmarks are included.
+A [Docker volume](https://docs.docker.com/storage/volumes/) can be used to run external benchmarks.
 
 ##### Example
 
@@ -188,24 +196,23 @@ To explore these results, run the `explore.sh` script:
 ./explore.sh
 ```
 
-This will open the JupyterLab interface in your browser.
+This will open the notebook interface in your browser.
 Open the `results-explore.ipynb` notebook to view the analysis.
 You can also modify the notebook to perform your own analysis on the results, or to visualize different metrics, and re-run the cells to see the updated plots.
 
 #### Results from the paper
 
-Many of the figures and tables from the paper have been generated from the `results-explore.ipynb` notebook.
+The notebook recreates the benchmark figures and tables from the paper.
 
-- **Section 2.6** of the notebook contains **Table 1** of the paper
-- **Section 2.7** of the notebook contains **Table 2** of the paper
-- **Section 3.1** of the notebook contains **Figure 1**, **Figure 2**, and **Table 3** of the paper
-- **Section 3.2** of the notebook contains **Figure 3** and **Figure 5** of the paper
+- **Section 2.5** of the notebook contains **Table 1** of the paper
+- **Section 2.6** of the notebook contains **Table 2** and **Table 7** of the paper
+- **Section 3.1** of the notebook contains **Figure 2** and **Table 3** of the paper
+- **Section 3.2** of the notebook contains **Figure 3**, **Figure 5**, and **Figure 6** of the paper
 - **Section 3.3** of the notebook contains **Table 8**, **Table 9**, and **Table 10** of the paper
 
 ### Binary
 
-To achieve maximum flexibility, the `binary.sh` script interfaces directly with the `cvc5/dlinear` binary inside the Docker container, allowing you to run your custom command on any benchmark instance.
-You can use a [docker volume](https://docs.docker.com/storage/volumes/) to mount your own smt2 files.
+To achieve maximum flexibility, the `binary.sh` script interfaces directly with the `cvc5/dlinear` binary inside the Docker container, allowing you to run custom commands on any benchmark instance.
 
 ```bash
 # Get all the available options from cvc5/dlinear
@@ -228,3 +235,24 @@ You can use a [docker volume](https://docs.docker.com/storage/volumes/) to mount
 # Run cvc5 with glpk, 150 pivots threshold, strict mode, and a 10s time limit
 ./binary.sh --use-approx --external-lp-solver=glpk --standard-effort-variable-order-pivots=150 --tlimit-per=10000 --stats-all --stats-internal /benchmarks/constraints-tms-2-3-light-40.smt2
 ```
+
+The script mounts `artifact/instances/` to `/instances` inside the container, so files placed there are directly available to `cvc5`.
+A [Docker volume](https://docs.docker.com/storage/volumes/) can still be used if you prefer mounting external directories.
+
+```bash
+# Run an arbitrary SMT2 file placed in artifact/instances/
+# 1) Copy your file to artifact/instances/my_arbitrary_problem.smt2
+# 2) Run it via the /instances path inside the container
+./binary.sh --use-approx --external-lp-solver=qsoptex --standard-effort-variable-order-pivots=100 --no-lp-strict-var --tlimit-per=10000 --stats-all --stats-internal /instances/my_arbitrary_problem.smt2
+```
+
+## Troubleshooting
+
+If you encounter any issues while running the experiments, please check the following:
+
+- Ensure that Docker is installed and running on your machine.
+- Check that you have enough free disk space to load the Docker image and store the results.
+- If you see permission errors when running the scripts, try running them with `bash <scriptname>.sh` or check the file permissions.
+- If you get the error `docker: Error response from daemon: failed to set up container networking: driver failed programming external connectivity on endpoint ...: Bind for 0.0.0.0:8888 failed: port is already allocated`, it means that port 8888 is already in use on your machine. You can either stop the process using that port or modify the `run.sh` script to use a different port for the notebook server (e.g., change `-p 8888:8888` to `-p 8889:8888` and update the URL accordingly).
+- If the artifact fails to work on Windows or Mac, **please try running it on a Linux machine**, as it has been tested on Linux and may have compatibility issues with other operating systems, especially Arm-based Macs.
+- If you want to update the Docker image, make sure you delete the existing image from your local Docker registry (e.g., `docker rmi qest-formats-ae:2026`) before loading the new one, to avoid conflicts with the old image.

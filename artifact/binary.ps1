@@ -5,6 +5,11 @@ Set-StrictMode -Version Latest
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $ImageTag = 'qest-formats-ae:2026'
 $ImageTar = Join-Path $ScriptDir 'qest-formats-ae-image.tar.gz'
+$InstancesDir = Join-Path $ScriptDir 'instances'
+
+if (-not (Test-Path -LiteralPath $InstancesDir)) {
+  New-Item -ItemType Directory -Path $InstancesDir | Out-Null
+}
 
 # Load docker image from tar if needed.
 & docker image inspect $ImageTag *> $null
@@ -15,4 +20,4 @@ if (-not $imageExists -and (Test-Path -LiteralPath $ImageTar)) {
 }
 
 Write-Host "[artifact] Running dlinear"
-& docker run --rm --entrypoint ./binary_impl.sh $ImageTag $args
+& docker run --rm -v "${InstancesDir}:/instances" --entrypoint ./binary_impl.sh $ImageTag $args

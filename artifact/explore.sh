@@ -3,8 +3,7 @@ set -euo pipefail
 
 readonly RUN_NAME=${1:-}
 readonly SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
-# readonly IMAGE_TAG="qest-formats-ae:2026"
-readonly IMAGE_TAG="temp"
+readonly IMAGE_TAG="qest-formats-ae:2026"
 readonly IMAGE_TAR="${SCRIPT_DIR}/qest-formats-ae-image.tar.gz"
 if [[ -z "${RUN_NAME}" ]]; then
     readonly RESULTS_DIR="${SCRIPT_DIR}/results"

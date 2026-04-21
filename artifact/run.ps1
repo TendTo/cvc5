@@ -2,9 +2,10 @@
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
 
-# Args: run name (default: smoke), local limit (default: 6)
+# Args: run name (default: smoke), local limit (default: 6), time limit (default: 21000)
 $RunName = if ($args.Count -ge 1 -and $args[0]) { [string]$args[0] } else { 'smoke' }
 $LocalLimit = if ($args.Count -ge 2 -and $args[1]) { [int]$args[1] } else { 6 }
+$TimeLimit = if ($args.Count -ge 3 -and $args[2]) { [int]$args[2] } else { 21000 }
 
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $ImageTag = 'qest-formats-ae:2026'
@@ -48,10 +49,12 @@ Write-Host "[artifact] Running $RunName test"
   --mount "type=bind,source=$ResultsDirAbs,target=/results" `
   --mount "type=bind,source=$InstancesDirAbs,target=/instances" `
   --entrypoint ./run_impl.sh `
-  $ImageTag $RunName $LocalLimit
+  $ImageTag $RunName $LocalLimit $TimeLimit
 
 Write-Host "[artifact] Launching the Jupyter notebook to visualize the results"
 & docker run -p 8888:8888 --rm `
   --mount "type=bind,source=$ResultsDirAbs,target=/work/results" `
   --mount "type=bind,source=$InstancesDirAbs,target=/work/instances" `
-  $ImageTag
+  -e "LOCAL_LIMIT=$LocalLimit" -e "RUN_NAME=$RunName" -e "TIME_LIMIT=$TimeLimit" `
+  -it --entrypoint ./jupyter_impl.sh `
+  $ImageTag "results-run.ipynb"

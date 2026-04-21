@@ -80,7 +80,8 @@ class SolverResult:
             return r"$t$"
         elif "options::delta" in self.dataframe.columns and self.dataframe["options::delta"].iloc[0] >= 0:
             assert all(self.dataframe["options::delta"] == self.dataframe["options::delta"].iloc[0])
-            return fr"$\delta={self.dataframe['options::delta'].iloc[0]}$"
+            # return fr"$\delta\le{self.dataframe['theory::arith::z::approx::delta'].max():.0e}$"
+            return fr"$\delta$"
         else:
             return r"$\varepsilon$"
 
@@ -410,8 +411,8 @@ Analysis on the impact of the external simplex solver on the overall performance
             by_label.keys(),
             title="Category",
             ncols=3,
-            loc="upper center",
-            bbox_to_anchor=(0.5, 1.08),
+            loc="center left",
+            bbox_to_anchor=(1, 0.5),
         )
 
     fig.suptitle("Exact solver impact (dotted line = calls)")
@@ -555,7 +556,7 @@ def print_stats(soplex_configs: list[SolverResult], filename: str = ""):
         row = summary_df.loc[config_name]
         # failures = int(row["feasible_failures"] + row["infeasible_failures"])
         rows.append(
-            f"| {config_name} | {int(row['external_calls'])} | {int(row['solved'])} | {int(row['unknown'])} | {int(row['tot_time_external'])} | {row['avg_time_external']:<15.2f}  | {row['lp_time']:<15.2f} | {row['lp_setup_time']:<15.2f} | {int(row['adjustment_calls'])} | {row['avg_adjustment_calls']:<15.2f} | {int(row['at_least_one_adjustment_call'])} |"
+            f"| {config_name} | {int(row['external_calls'])} | {int(row['solved'])} | {int(row['unknown'])} | {int(row['tot_time_external'])} | {row['avg_time_external']:<15.2f}  | {row['lp_time']:<15.2f} | {row['lp_setup_time']:<15.2f} | {int(row['adjustment_calls'])} | {row['avg_adjustment_calls'] if row['avg_adjustment_calls'] >= 0 else 0:<15.2f} | {int(row['at_least_one_adjustment_call'])} |"
         )
     return f"""### Summary statistics for each configuration with an external LP solver
 | Config       | Registered results | Solved | Unknown | Tot Time | Med Time | Med LP Time | Med LP Setup Time | Adjustment calls | Med Adjustment calls | $>1$ Adj. Pivot |

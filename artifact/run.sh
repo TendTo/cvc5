@@ -3,6 +3,7 @@ set -euo pipefail
 
 readonly RUN_NAME=${1:-smoke}
 readonly LOCAL_LIMIT=${2:-6}
+readonly TIME_LIMIT=${3:-21000}
 readonly SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 readonly IMAGE_TAG="qest-formats-ae:2026"
 readonly IMAGE_TAR="${SCRIPT_DIR}/qest-formats-ae-image.tar.gz"
@@ -21,13 +22,11 @@ if ! docker image inspect "${IMAGE_TAG}" >/dev/null 2>&1 && [[ -f "${IMAGE_TAR}"
   docker load -i "${IMAGE_TAR}" >/dev/null
 fi
 
-echo "[artifact] Running ${RUN_NAME} test"
 docker run --rm \
   --user "${HOST_UID}:${HOST_GID}" \
   -v "${RESULTS_DIR}:/results:rw" \
   -v "${INSTANCES_DIR}:/instances" \
   --entrypoint ./run_impl.sh \
-  "${IMAGE_TAG}" "${RUN_NAME}" "${LOCAL_LIMIT}"
+  "${IMAGE_TAG}" "${RUN_NAME}" "${LOCAL_LIMIT}" "${TIME_LIMIT}"
 
-echo "[artifact] Launching the Jupyter notebook to visualize the results"
-docker run -p 8888:8888 --rm -e "LOCAL_LIMIT=${LOCAL_LIMIT}" -e "RUN_NAME=${RUN_NAME}" -v "${RESULTS_DIR}:/work/results:rw" -v "${INSTANCES_DIR}:/work/instances" "${IMAGE_TAG}"
+docker run -p 8888:8888 --rm -e "LOCAL_LIMIT=${LOCAL_LIMIT}" -e "RUN_NAME=${RUN_NAME}" -e "TIME_LIMIT=${TIME_LIMIT}" -v "${RESULTS_DIR}:/work/results:rw" -v "${INSTANCES_DIR}:/work/instances" -it --entrypoint ./jupyter_impl.sh "${IMAGE_TAG}" "results-run.ipynb"

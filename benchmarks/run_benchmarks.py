@@ -60,7 +60,7 @@ def run_cvc5(file: str, args: Args, output_dir: str) -> None:
         cmd.extend(["--tlimit-per", str(args.timeout * 1000)])  # cvc5 expects milliseconds
     with open(out_file, "w", encoding="utf-8") as out, open(err_file, "w", encoding="utf-8") as err:
         try:
-            subprocess.run(cmd, stdout=out, stderr=err, timeout=args.timeout + 120 if args.timeout else None)
+            subprocess.run(cmd, stdout=out, stderr=err, timeout=args.timeout + 5 if args.timeout else None)
         except subprocess.TimeoutExpired:
             err.write(f"Error: Solver timed out after {args.timeout} seconds\n")
 
@@ -85,7 +85,7 @@ def run_glpk(file: str, args: Args, output_dir: str) -> None:
         err.write(f"options::external-lp-solver = {args.solver}\n")
         err.write(f"options::delta = {args.delta}\n")
         try:
-            subprocess.run(cmd, stdout=out, stderr=err, timeout=args.timeout + 120 if args.timeout else None)
+            subprocess.run(cmd, stdout=out, stderr=err, timeout=args.timeout + 5 if args.timeout else None)
         except subprocess.TimeoutExpired:
             err.write(f"Error: Solver timed out after {args.timeout} seconds\n")
 
@@ -118,7 +118,7 @@ def run_soplex(file: str, args: Args, output_dir: str) -> None:
         err.write(f"options::external-lp-solver = {args.solver}\n")
         err.write(f"options::delta = {args.delta}\n")
         try:
-            subprocess.run(cmd, stdout=out, stderr=err, timeout=args.timeout + 120 if args.timeout else None)
+            subprocess.run(cmd, stdout=out, stderr=err, timeout=args.timeout + 5 if args.timeout else None)
         except subprocess.TimeoutExpired:
             err.write(f"Error: Solver timed out after {args.timeout} seconds\n")
 
@@ -151,7 +151,7 @@ def run_qsoptex(file: str, args: Args, output_dir: str) -> None:
         err.write(f"options::external-lp-solver = {args.solver}\n")
         err.write(f"options::delta = {args.delta}\n")
         try:
-            subprocess.run(cmd, stdout=out, stderr=err, timeout=args.timeout + 120 if args.timeout else None)
+            subprocess.run(cmd, stdout=out, stderr=err, timeout=args.timeout + 5 if args.timeout else None)
         except subprocess.TimeoutExpired:
             err.write(f"Error: Solver timed out after {args.timeout} seconds\n")
 
@@ -334,10 +334,6 @@ def build_parser() -> argparse.ArgumentParser:
 def main() -> None:
     parser = build_parser()
     args: Args = parser.parse_args()
-    if args.solver in ("soplex", "glpk", "qsoptex") and args.iterations <= 0:
-        print("Error: --iterations must be > 0 when using soplex, glpk or qsoptex.")
-        sys.exit(1)
-
     execute(args)
 
 

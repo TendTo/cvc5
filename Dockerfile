@@ -88,12 +88,14 @@ RUN curl -L "https://zenodo.org/records/16740866/files/QF_LRA.tar.zst?download=1
     find /benchmarks -type d -empty -delete
 
 
-ADD https://objectstorage.eu-zurich-1.oraclecloud.com/p/xlfE6Ysf_O7Eey_sTiBu_tTUTt7dJhTFjq0rSJJkf4Rz4YgvFxa0i1PzFNj-Vwyn/n/zrr1s09jjqfi/b/dlinear/o/sk.tar.xz /benchmarks
+ADD --chown=$NB_USER https://objectstorage.eu-zurich-1.oraclecloud.com/p/xlfE6Ysf_O7Eey_sTiBu_tTUTt7dJhTFjq0rSJJkf4Rz4YgvFxa0i1PzFNj-Vwyn/n/zrr1s09jjqfi/b/dlinear/o/sk.tar.xz /benchmarks
+
+RUN tar -xf /benchmarks/sk.tar.xz --strip-components=1 -C /benchmarks && rm -f /benchmarks/sk.tar.xz && \
+    chmod -R a+rwX /benchmarks/*
 
 WORKDIR /work
 
 RUN touch .dockerenv
-
 
 COPY --from=builder --chown=$NB_USER --chmod=777 /src/cvc5/build/bin/cvc5 /usr/local/bin/cvc5
 
