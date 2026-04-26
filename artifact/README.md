@@ -1,5 +1,17 @@
 # dlinear Artifact (Docker-based)
 
+## Table of Contents
+
+- [Requirements](#requirements)
+- [At a glance](#at-a-glance)
+- [Configurations](#configurations)
+- [Experiments](#experiments)
+  - [Smoke](#smoke)
+  - [Run](#run)
+  - [Explore](#explore)
+  - [Binary](#binary)
+- [Troubleshooting](#troubleshooting)
+
 This folder contains the **required artifact materials** for an AE review:
 
 ```bash
@@ -256,3 +268,4 @@ If you encounter any issues while running the experiments, please check the foll
 - If you get the error `docker: Error response from daemon: failed to set up container networking: driver failed programming external connectivity on endpoint ...: Bind for 0.0.0.0:8888 failed: port is already allocated`, it means that port 8888 is already in use on your machine. You can either stop the process using that port or modify the `run.sh` script to use a different port for the notebook server (e.g., change `-p 8888:8888` to `-p 8889:8888` and update the URL accordingly).
 - If the artifact fails to work on Windows or Mac, **please try running it on a Linux machine**, as it has been tested on Linux and may have compatibility issues with other operating systems, especially Arm-based Macs.
 - If you want to update the Docker image, make sure you delete the existing image from your local Docker registry (e.g., `docker rmi qest-formats-ae:2026`) before loading the new one, to avoid conflicts with the old image.
+- If the docker container is not removed automatically after stopping it, you can delete it manually with `docker rm <container_id>`, where `<container_id>` can be found by running `docker ps -a` and looking for the container created from the `qest-formats-ae:2026` image.
