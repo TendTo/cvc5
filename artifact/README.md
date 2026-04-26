@@ -69,7 +69,6 @@ If you want complete control over the configuration of the solver, see the [Bina
 | **cvc5+GLPK**       | GLPK               | 0                | N/A                     | Sloane–Stufken              |
 | **dlinear**         | SoPlex             | 0                | $\varepsilon$           | Sloane–Stufken              |
 | **dlinear**         | qsoptex            | 0                | $\varepsilon$, $\delta$ | Sloane–Stufken              |
-|                     |
 
 See _Sections 4.2_ and _Section 5_ of the paper for more details on modes $\varepsilon$, $t$, and $\delta$.
 

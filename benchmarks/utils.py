@@ -9,6 +9,86 @@ from functools import reduce
 import random
 from pathlib import Path
 
+import io
+import base64
+from IPython.display import HTML, Markdown
+import matplotlib.pyplot as plt
+
+
+class FlowLayout(object):
+    """A class / object to display plots in a horizontal / flow layout below a cell
+
+    # Source - https://stackoverflow.com/a/49566213
+    # Posted by Hagrid67, modified by community. See post 'Timeline' for change history
+    # Retrieved 2026-04-26, License - CC BY-SA 3.0
+    """
+
+    @staticmethod
+    def init_css():
+        """Initial CSS for the flow layout - defines a responsive grid with at most 2 items per row"""
+        return HTML(
+"""<style>
+.grid-container {
+display: grid;
+grid-template-columns: repeat(2, minmax(0, 1fr)); /* at most 2 per row */
+gap: 10px;
+justify-items: center;
+align-items: center;
+}
+@media (max-width: 900px) {
+.grid-container {
+grid-template-columns: 1fr; /* fallback to 1 per row */
+}
+}
+.item-plot {
+padding: 5px;
+background-color: white;
+max-width: 100%;
+height: auto;
+}
+.item-md {
+max-width: 100%;
+height: auto;
+display: inline-block;
+}
+.item-full {
+grid-column: 1 / -1; /* span all columns */
+justify-self: start; /* align to the left */
+}
+</style>"""
+        )
+
+    def __init__(self):
+        # string buffer for the HTML: initially some CSS; images to be appended
+        self.content = '<div class="grid-container">\n\n'
+
+    def add_md_line(self, sMd: str):
+        """Add a markdown text as an item in the flow layout"""
+        self.content += f'<div class="item-full">\n\n{sMd}\n\n</div>\n'
+
+    def add_plot_col(self, oAxes: plt.Axes):
+        """Saves a PNG representation of a Matplotlib Axes object"""
+        Bio = io.BytesIO()  # bytes buffer for the plot
+        fig = oAxes.get_figure()
+        fig.canvas.print_png(Bio)  # make a png of the plot in the buffer
+
+        # encode the bytes as string using base 64
+        sB64Img = base64.b64encode(Bio.getvalue()).decode()
+        self.content += f'<img class="item-plot" src="data:image/png;base64,{sB64Img}">'
+        plt.close(fig)  # close the figure to avoid display in the notebook cell
+
+    def add_md_col(self, sMd: str):
+        """Add a markdown text as an item in the flow layout"""
+        self.content += f'<div class="item-md">\n\n{sMd}\n\n</div>'
+
+    def to_html(self):
+        """Final step - display the accumulated HTML"""
+        return HTML(self.content + "</div>")
+
+    def to_md(self):
+        """Final step - display the accumulated HTML as markdown (for testing)"""
+        return Markdown(self.content + "\n\n</div>")
+
 
 def is_docker():
     cgroup = Path("/proc/self/cgroup")
@@ -81,17 +161,14 @@ class SolverResult:
         elif "options::delta" in self.dataframe.columns and self.dataframe["options::delta"].iloc[0] >= 0:
             assert all(self.dataframe["options::delta"] == self.dataframe["options::delta"].iloc[0])
             # return fr"$\delta\le{self.dataframe['theory::arith::z::approx::delta'].max():.0e}$"
-            return fr"$\delta$"
+            return rf"$\delta$"
         else:
             return r"$\varepsilon$"
 
 
 def difficulty_analysis(solvers_analysis: list[SolverResult], total_count: int, group_name="all", fig_caption=""):
     # Instance difficulty categorization
-    text = f"""## Difficulty analysis on {group_name}
-
-All problems are divided into buckets depending on the time taken by the solver to solve them.
-
+    text = f"""
 | Solver | Modes  | Pivots | Very Fast (<0.1s) | Fast (0.1-1s) | Medium (1-10s) | Hard (10-100s) | Very Hard (>100s) | Total |
 | ------ | ------ | ------ | ----------------- | ------------- | -------------- | -------------- | ----------------- | ----- |
 """
@@ -181,13 +258,20 @@ All problems are divided into buckets depending on the time taken by the solver 
     plt.xticks(rotation=25, ha="center")
     plt.tight_layout()
     box = ax.get_position()
-    ax.set_position([box.x0, box.y0, box.width * 0.8, box.height * 0.8])
+    ax.set_position([box.x0, box.y0, box.width * 0.75, box.height * 0.8])
 
     # Put a legend to the right of the current axis
     ax.legend(title="Category", loc="center left", bbox_to_anchor=(1, 0.5))
     if fig_caption:
-        plt.figtext(0.5, -0.05, fig_caption, wrap=True, horizontalalignment="center", fontsize=10)
-    plt.show()
+        ax.figure.text(
+            0.5,
+            0.0,
+            fig_caption,
+            wrap=True,
+            ha="center",
+            va="bottom",
+            fontsize=10,
+        )
 
     if SAVE:
         ax.figure.savefig(
@@ -195,8 +279,13 @@ All problems are divided into buckets depending on the time taken by the solver 
             bbox_inches="tight",
         )
 
-    return f"""{text}{"\n".join(rows)}
-"""
+    flow = FlowLayout()
+    flow.add_md_line(f"""## Difficulty analysis on {group_name}
+
+All problems are divided into buckets depending on the time taken by the solver to solve them.""")
+    flow.add_md_col(f"""{text}{"\n".join(rows)}\n""")
+    flow.add_plot_col(ax)
+    return flow.to_md()
 
 
 def external_solver_impact(solvers_analysis: list[SolverResult], filename: str = "", fig_caption: str = ""):
@@ -417,7 +506,7 @@ Analysis on the impact of the external simplex solver on the overall performance
 
     fig.suptitle("Exact solver impact (dotted line = calls)")
     if fig_caption:
-        plt.figtext(0.5, -0.05, fig_caption, wrap=True, horizontalalignment="center", fontsize=10)
+        plt.figtext(0.5, 0.0, fig_caption, wrap=True, horizontalalignment="center", fontsize=10)
     plt.tight_layout()
     plt.show()
 
@@ -1086,7 +1175,7 @@ def plot_performance_profiles(
     ax.set_position([box.x0, box.y0, box.width * shrink_width, box.height * shrink_height])
 
     if fig_caption:
-        ax.figure.text(0.5, -0.01, fig_caption, ha="center", va="bottom", fontsize=9)
+        ax.figure.text(0.5, 0.0, fig_caption, ha="center", va="bottom", fontsize=9)
 
     # Put a legend to the right of the current axis
     # ax.legend(loc="center left", bbox_to_anchor=(1, 0.5))
