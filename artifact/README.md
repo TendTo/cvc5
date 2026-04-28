@@ -27,6 +27,8 @@ artifact/
 └── results/     # CSV files with results from the paper's experiments
 ```
 
+The source code is available on the project's [GitHub repository](https://github.com/TendTo/cvc5).
+
 ## Requirements
 
 To run the experiments, reviewers will need:
@@ -268,3 +270,11 @@ If you encounter any issues while running the experiments, please check the foll
 - If the artifact fails to work on Windows or Mac, **please try running it on a Linux machine**, as it has been tested on Linux and may have compatibility issues with other operating systems, especially Arm-based Macs.
 - If you want to update the Docker image, make sure you delete the existing image from your local Docker registry (e.g., `docker rmi qest-formats-ae:2026`) before loading the new one, to avoid conflicts with the old image.
 - If the docker container is not removed automatically after stopping it, you can delete it manually with `docker rm <container_id>`, where `<container_id>` can be found by running `docker ps -a` and looking for the container created from the `qest-formats-ae:2026` image.
+- The scripts automize the process of extracting and launching the Docker images and container with the correct configurations. We will use `<pwd>` to refer to the present working directory.
+  These are the steps they perform:
+  - `docker load -i qest-formats-ae-image.tar.gz` to load the Docker image present in the artifact,
+  - `docker run --rm -v "<pwd>/results-[suite]:/results:rw" -v "<pwd>/instances:/instances" --entrypoint ./run_impl.sh qest-formats-ae:2026 [suite] [limit] [timeout]` to run the given benchmark `[suite]` over `[limit]` instances with a set `[timeout]` and store the results in `<pwd>/results-[suite]`,
+  - `docker run -p 8888:8888 --rm -e "LOCAL_LIMIT=[limit]" -e "RUN_NAME=[suite]" -e "TIME_LIMIT=[timeout]" -v "<pwd>/results-[suite]:/work/results:rw" -v "<pwd>/instances:/work/instances" -it --entrypoint ./jupyter_impl.sh qest-formats-ae:2026 results-run.ipynb` to explore the results produced by the given benchmark `[suite]` ran over `[limit]` instances with a set `[timeout]`,
+  - `docker run -p 8888:8888 --rm -v "<pwd>/results:/work/results:rw" -v "<pwd>/instances:/work/instances" -it --entrypoint ./jupyter_impl.sh qest-formats-ae:2026 results-explore.ipynb` to explore the results from the paper,
+  - `docker run --rm -v "<pwd>/instances:/instances" --entrypoint ./binary_impl.sh qest-formats-ae:2026 ...` to launch the docker in binary configuration. `...` can be any argument supported by the binary. Use `--help` to get the full list.
+- If you want to try the latest Docker image from the [GitHub repository](https://github.com/TendTo/cvc5), run `docker pull ghcr.io/tendto/cvc5:feat-exact-lp` and then `docker tag ghcr.io/tendto/cvc5:feat-exact-lp qest-formats-ae:2026`.

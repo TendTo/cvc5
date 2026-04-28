@@ -20,9 +20,7 @@ $ResultsDirAbs = (Resolve-Path -Path $ResultsDir).Path
 $InstancesDirAbs = (Resolve-Path -Path $InstancesDir).Path
 
 # Load docker image from tar if needed.
-& docker image inspect $ImageTag *> $null
-$imageExists = ($LASTEXITCODE -eq 0)
-if (-not $imageExists -and (Test-Path -LiteralPath $ImageTar)) {
+if (-not (docker images -q $ImageTag 2> $null) -and (Test-Path -LiteralPath $ImageTar)) {
   Write-Host "[artifact] Loading docker image from $ImageTar"
   & docker load -i $ImageTar *> $null
 }
