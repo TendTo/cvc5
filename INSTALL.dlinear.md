@@ -59,8 +59,9 @@ Some of these dependencies can be automatically downloaded by the configuration 
 If you are on a debian-based system, we advise running the following command to install most of _dlinear_'s and its dependencies' requirements
 
 ```bash
-apt install build-essential libgmp-dev \
-  python3.12-venv libtool libz-dev libbz2-dev
+apt update
+sudo apt install build-essential libgmp-dev cmake python3.12-venv \
+  libtool libz-dev libbz2-dev libmpfr-dev libboost-dev
 ```
 
 You will still need to install both [Qsoptex](https://github.com/TendTo/qsopt-ex) and [SoPlex](https://github.com/scipopt/soplex#).
