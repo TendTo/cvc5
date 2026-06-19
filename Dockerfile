@@ -102,3 +102,5 @@ COPY --from=builder --chown=$NB_USER --chmod=777 /src/cvc5/build/bin/cvc5 /usr/l
 COPY --chown=$NB_USER benchmarks .
 
 COPY --chown=$NB_USER artifact/scripts .
+
+ENTRYPOINT ["cvc5"]
