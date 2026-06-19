@@ -35,7 +35,7 @@ An SMT-LIB instance can then be solved by mounting the directory containing
 the benchmark and invoking the solver inside the container:
 
 ```bash
-docker run --rm -v "$PWD:/bench" dlinear /bench/benchmark.smt2
+docker run --rm -v "${PWD}:/bench" dlinear /bench/benchmark.smt2
 ```
 
 ## _dlinear_ from source
@@ -60,7 +60,7 @@ If you are on a debian-based system, we advise running the following command to 
 
 ```bash
 apt update
-sudo apt install build-essential libgmp-dev cmake python3.12-venv \
+apt install build-essential libgmp-dev cmake python3.12-venv \
   libtool libz-dev libbz2-dev libmpfr-dev libboost-dev
 ```
 
@@ -109,4 +109,61 @@ For detailed instructions on how to use the tool, run
 
 ```bash
 ./bin/cvc5 --help
+```
+
+## Python bindings
+
+If you prefer using _dlinear_ in Python, you can do so by building the python bindings.
+
+### Requirements
+
+The same as [_dlinear_ from source](#dlinear-from-source), and additionally
+
+- [Cpython](https://github.com/python/cpython) for the python headers
+
+On Debian-based system, the necessary headers can installed via
+
+```bash
+apt install python3-dev
+```
+
+### Building
+
+```bash
+./configure.sh --auto-download --gpl --glpk --soplex --qsoptex --python-bindings
+```
+
+### Use
+
+Before using `dlinear` in your project, make sure `PYTHONPATH` is extended to point to the newly built library.
+
+```bash
+export PYTHONPATH="${PWD}/build/src/api/python/:$PYTHONPATH"
+python3
+>>> import cvc5
+>>> ...
+```
+
+Then, you can run python scripts like
+
+```py
+#!/usr/bin/env python3
+from cvc5.pythonic import *
+
+x, y = Real("x"), Real("y")
+
+s = Solver()
+s.set("use-approx", True) # Enable external solvers
+s.set("external-lp-solver", "soplex") # Or qsopex
+s.set("standard-effort-variable-order-pivots", 0)
+s.set("delta", -1) # Delta-complete mode disabled
+s.set("lp-strict-var", True) # Using the strict var t
+
+s.add(x + y >= 1)
+s.add(x >= 0)
+s.add(y >= 0)
+
+res = s.check()
+assert res == sat, "Constraints are unsatisfiable"
+print(s.model())
 ```
