@@ -66,6 +66,8 @@ Optional Packages:
 The following flags enable optional packages (disable with --no-<option name>).
   --cln                    use CLN instead of GMP
   --glpk                   use GLPK simplex solver
+  --soplex                 use the SoPlex simplex solver
+  --qsoptex                use the QSopt_ex simplex solver
   --cryptominisat          use the CryptoMiniSat SAT solver
   --kissat                 use the Kissat SAT solver
   --poly                   use the LibPoly library [default=yes]
@@ -137,6 +139,8 @@ debug_symbols=default
 docs=default
 docs_ga=default
 glpk=default
+soplex=default
+qsoptex=default
 gpl=default
 kissat=default
 poly=ON
@@ -273,6 +277,12 @@ do
 
     --glpk) glpk=ON;;
     --no-glpk) glpk=OFF;;
+
+    --soplex) soplex=ON;;
+    --no-soplex) soplex=OFF;;
+
+    --qsoptex) qsoptex=ON;;
+    --no-qsoptex) qsoptex=OFF;;
 
     --poly) poly=ON;;
     --no-poly) poly=OFF;;
@@ -484,6 +494,10 @@ fi
   && cmake_opts="$cmake_opts -DUSE_CRYPTOMINISAT=$cryptominisat"
 [ $glpk != default ] \
   && cmake_opts="$cmake_opts -DUSE_GLPK=$glpk"
+[ $soplex != default ] \
+  && cmake_opts="$cmake_opts -DUSE_SOPLEX=$soplex"
+[ $qsoptex != default ] \
+  && cmake_opts="$cmake_opts -DUSE_QSOPTEX=$qsoptex"
 [ $kissat != default ] \
   && cmake_opts="$cmake_opts -DUSE_KISSAT=$kissat"
 [ $poly != default ] \
