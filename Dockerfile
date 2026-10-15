@@ -67,40 +67,13 @@ RUN cmake -S . -B build -G Ninja \
 ENTRYPOINT ["/bin/bash"]
 
 # -------- Runtime stage --------
-FROM quay.io/jupyter/scipy-notebook AS runtime
-
-ENV DEBIAN_FRONTEND=noninteractive
 
 
-# Use root to create the /benchmarks directory and set permissions, as the default user in the base image does not have permissions to create directories in the root filesystem.
-USER root
-RUN mkdir -p /benchmarks && \
-    chmod -R a+rwX /benchmarks
-USER $NB_USER
+FROM alpine:3 AS runtime
 
+LABEL org.opencontainers.image.authors="Ernesto Casablanca"
+LABEL author="Ernesto Casablanca"
 
-# Fetch and unpack SMT-LIB QF_LRA benchmark archive, moving them all to the /benchmarks directory.
-RUN curl -L "https://zenodo.org/records/16740866/files/QF_LRA.tar.zst?download=1" \
-    -o /tmp/QF_LRA.tar.zst \
-    && tar --zstd -xf /tmp/QF_LRA.tar.zst -C /benchmarks \
-    && rm -f /tmp/QF_LRA.tar.zst && \
-    find /benchmarks -type f -name "*.smt2" -exec mv {} /benchmarks/ \; && \
-    find /benchmarks -type d -empty -delete
-
-
-ADD --chown=$NB_USER https://objectstorage.eu-zurich-1.oraclecloud.com/p/xlfE6Ysf_O7Eey_sTiBu_tTUTt7dJhTFjq0rSJJkf4Rz4YgvFxa0i1PzFNj-Vwyn/n/zrr1s09jjqfi/b/dlinear/o/sk.tar.xz /benchmarks
-
-RUN tar -xf /benchmarks/sk.tar.xz --strip-components=1 -C /benchmarks && rm -f /benchmarks/sk.tar.xz && \
-    chmod -R a+rwX /benchmarks/*
-
-WORKDIR /work
-
-RUN touch .dockerenv
-
-COPY --from=builder --chown=$NB_USER --chmod=777 /src/cvc5/build/bin/cvc5 /usr/local/bin/cvc5
-
-COPY --chown=$NB_USER benchmarks .
-
-COPY --chown=$NB_USER artifact/scripts .
+COPY --from=builder --chmod=777 /src/cvc5/build/bin/cvc5 /usr/local/bin/cvc5
 
 ENTRYPOINT ["cvc5"]
