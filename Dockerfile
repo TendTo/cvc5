@@ -26,19 +26,19 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 WORKDIR /src
 
-RUN git clone https://github.com/TendTo/qsopt-ex.git --depth 1 \
-    && cd /src/qsopt-ex \
-    && ./bootstrap \
-    && mkdir build && cd build \
-    && ../configure --disable-debug CFLAGS='-O3' \
-    && make -j"$(nproc)" \
-    && make install
-
 RUN git clone https://github.com/scipopt/soplex.git --depth 1 \
     && cd /src/soplex \
     && cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DGMP=ON -DMPFR=ON -DBOOST=ON -DZLIB=OFF \
     && cd build \
     && make -j"$(nproc)" libsoplex \
+    && make install
+
+RUN git clone https://github.com/TendTo/qsopt-ex.git --depth 1 \
+    && cd /src/qsopt-ex \
+    && ./bootstrap \
+    && mkdir build && cd build \
+    && ../configure --disable-debug \
+    && make -j"$(nproc)" \
     && make install
 
 RUN sed -i -re 's/\.so([^.])/\.a\1/g' /usr/local/lib/cmake/soplex/soplex-targets.cmake \
